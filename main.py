@@ -28,7 +28,7 @@ def find_index_post(id):
 
 @app.get("/")
 async def root():
-    return {"message": "HELLO WORLD! I'm still here"}
+    return {"message": "HELLO WORLD! I'm still here and in windows"}
 
 @app.get("/all_posts")
 def get_posts():
