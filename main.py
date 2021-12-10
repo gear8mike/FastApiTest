@@ -1,3 +1,4 @@
+import time
 from typing import Optional
 from fastapi import FastAPI, Response, status, HTTPException
 from fastapi.params import Body
@@ -16,10 +17,19 @@ class Post(BaseModel):
     published: bool = True
     #rating: Optional[int] = None
 
-try:
-    conn = psycopg2.connect(host='localhost', database='fastapi', user='postgres', password='112121', cursor_factory=RealDictCursor)
-    cursor = conn.cursor()
-    print("database connection is succesfull")
+while 1:
+    try:
+        conn = psycopg2.connect(host='localhost', database='fastapi', user='postgres', password='112121', cursor_factory=RealDictCursor)
+        cursor = conn.cursor()
+        print("*********************************")
+        print("Database Connection Is Succesfull")
+        print("*********************************")
+        break
+
+    except Exception as error:
+        print('connection is failed')
+        print('Error: ', error)
+        time.sleep(5)
 
 my_posts = [{"title": "title of post 1", "content": "content of post 1", "id": 1},{"title": "my favorite meals", "content": "I like icecream", "id": 2}, {"title": "Do you like my photos?", "content": "yes very nice", "id": 3}]
 
@@ -37,22 +47,25 @@ def find_index_post(id):
 async def root():
     return {"message": "HELLO WORLD! I'm still here and in windows"}
 
-@app.get("/all_posts")
+@app.get("/posts")
 def get_posts():
-    return{"data": my_posts}
+    cursor.execute(""" SELECT * FROM posts""")
+    posts = cursor.fetchall()
+    #print(posts)
+    return{"data": posts}
 
 @app.post("/posts", status_code=HTTP_201_CREATED)  
 def create_posts(post: Post):
-    #print(post.rating)
-    post_dict = post.dict()
-    post_dict['id'] = randrange(0, 1000000)
-    my_posts.append(post_dict)
-    return{"data": post_dict}
+    cursor.execute("""INSERT INTO posts (title, content, published)  VALUES (%s, %s, %s) RETURNING * """, (post.title, post.content, post.published))
+    new_post = cursor.fetchone()
+    conn.commit()
+    return{"data": new_post}
     #return{"new_message": f"title: {PayLoad['title']} content:{PayLoad['content']}"}   
     
 @app.get("/posts/{id}")
 def get_post(id: int, response: Response):
-    post = find_post(id)
+    cursor.execute("""SELECT * FROM posts WHERE id = %s """, (str(id)),)
+    post = cursor.fetchone()
     if not post:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"post with id: {id} doesn't exist")
         #response.status_code = status.HTTP_404_NOT_FOUND
