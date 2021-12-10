@@ -3,6 +3,8 @@ from fastapi import FastAPI, Response, status, HTTPException
 from fastapi.params import Body
 from pydantic import BaseModel
 from random import randrange
+import psycopg2
+from psycopg2.extras import RealDictCursor
 
 from starlette.status import HTTP_201_CREATED, HTTP_204_NO_CONTENT, HTTP_404_NOT_FOUND   
 
@@ -12,7 +14,12 @@ class Post(BaseModel):
     title: str
     content: str
     published: bool = True
-    rating: Optional[int] = None
+    #rating: Optional[int] = None
+
+try:
+    conn = psycopg2.connect(host='localhost', database='fastapi', user='postgres', password='112121', cursor_factory=RealDictCursor)
+    cursor = conn.cursor()
+    print("database connection is succesfull")
 
 my_posts = [{"title": "title of post 1", "content": "content of post 1", "id": 1},{"title": "my favorite meals", "content": "I like icecream", "id": 2}, {"title": "Do you like my photos?", "content": "yes very nice", "id": 3}]
 
