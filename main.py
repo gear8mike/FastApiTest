@@ -1,15 +1,27 @@
+import imp
 import time
 from typing import Optional
-from fastapi import FastAPI, Response, status, HTTPException
+from fastapi import FastAPI, Response, status, HTTPException, Depends
 from fastapi.params import Body
 from pydantic import BaseModel
 from random import randrange
 import psycopg2
 from psycopg2.extras import RealDictCursor
+from sqlalchemy.orm import Session
+from . import models
+from .database import SessionLocal, engine
+
+models.Base.metadata.create_all(bind=engine)
 
 from starlette.status import HTTP_201_CREATED, HTTP_204_NO_CONTENT, HTTP_404_NOT_FOUND   
 
 app = FastAPI()
+def get_db():
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
 
 class Post(BaseModel):
     title: str
@@ -46,6 +58,10 @@ def find_index_post(id):
 @app.get("/")
 async def root():
     return {"message": "HELLO WORLD! I'm still here and in windows"}
+
+@app.get("/sqlalchemy")
+def test_posts(db:Session = Depends(get_db)):
+    return {'status': 'success'}
 
 @app.get("/posts")
 def get_posts():
